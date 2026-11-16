@@ -1,6 +1,6 @@
 ---
 name: walkthrough
-description: "Walk a human through a range of code changes as a story: diffs grouped by purpose, each with the why from its ticket or spec, every unit addressable by ID for chat, edits, and follow-up tickets."
+description: "Walk a human through a range of code changes as a story: diffs grouped by purpose, each with the why from its ticket or spec, every unit addressable by ID; what the reviewer raises is settled in grilling rounds."
 disable-model-invocation: true
 ---
 
@@ -9,11 +9,18 @@ disable-model-invocation: true
 A **walkthrough** is a guided review of changes that already landed: the **how** (the net diff) beside the **why** (the ticket, spec, or ADR it was born from), told as a **story** instead of file by file. It has two halves:
 
 - **The page**: one `walkthrough.html` the human reads, marking each change fine / needs change / question, with an export back into this session.
-- **The session**: you stay here as the narrator. The human points at units by ID ("T48.2b: drop those comments", "T51.1: why not reuse X?"), and each request is either done **now** or **queued** for `/to-tickets`.
+- **The session**: you stay here as the narrator. The human points at units by ID ("T48.2b: drop those comments", "T51.1: why not reuse X?"). Everything they raise becomes an **open point**, settled in grilling rounds; only the points they decide to build later reach `/to-tickets`.
 
 You narrate; judging belongs to `/code-review`. Explain what each change does and why it exists, and let the human form the verdict.
 
 [`walkthrough.mjs`](walkthrough.mjs) (in this skill's directory) does the mechanical work: `hunks` splits a range into hunks and traces each to its commits and tickets, and `build` splices your outline into [`template.html`](template.html). **Your job is the outline**: grouping hunks into changes, ordering them into a story, and writing the why and how.
+
+## Pick the branch
+
+If the repo has a `.sandcastle/` directory, the tickets ran through sandfactory: read [SANDFACTORY.md](SANDFACTORY.md) first. It says where an existing walkthrough lives, which range a new one covers, and where fixes are committed.
+
+- **Resume**: the target already has a walkthrough, its page and its outline (by default `.scratch/<feature>/walkthrough.html` and `.scratch/<feature>/walkthrough/outline.json`). Read the outline, then do step 2, then hold the diff as step 3's size rule says. Then go to step 4, or to step 5 when the human has already pasted an export.
+- **Generate**: otherwise, steps 1–6.
 
 ## Process
 
@@ -24,8 +31,6 @@ The argument names a feature group (`.scratch/<feature>`), specific tickets, or 
 - **Tickets**: find the commits that name them. A subject names a ticket (`feat: complete issue #48`), or a merge names a ticket's branch (`Merge branch 'feature/<group>-<NN>-<slug>'`). `head` is the current `HEAD`. `base` is the first parent of the earliest matching commit on `HEAD`'s first-parent line.
 - **Feature group**: every ticket under its `issues/`. Take the range from the group branch's merge-base with the branch it lands on (the default branch unless the user says otherwise).
 - **Fixed point**: `git merge-base <point> HEAD`.
-
-If the repo has a `.sandcastle/` directory, the tickets ran through sandfactory: read [SANDFACTORY.md](SANDFACTORY.md) now. It changes where the ranges come from.
 
 Then, per repo:
 
@@ -70,15 +75,15 @@ Report the `file://` URL, the counts `build` printed, the size of the Untraced g
 
 ### 5. Run the conversation
 
-Work the human's messages per **The conversation** below until they call the review done.
+Collect the open points, then grill them per **The conversation** below.
 
-**Done when:** every ✎ and ? the human raised is answered, done now, or queued.
+**Done when:** every open point in `open-points.md` has an outcome, and the human has no more to raise.
 
 ### 6. Close out
 
-Show the queue (`.scratch/<feature>/walkthrough/queue.md`) and tell the human to run `/to-tickets` on it. That skill slices the items and writes their blocking edges, so the new tickets land in the same `issues/` beside the ones this range closed. The walkthrough files are ephemeral like a testbook, so leave them uncommitted and offer to delete them once the tickets exist.
+Summarise `open-points.md` by outcome: the commits made, the spec and ticket edits left uncommitted, the points dropped. Then hand the **build later** points, and only those, to `/to-tickets` with their agreed direction. That skill slices them and writes their blocking edges, so the new tickets land in the same `issues/` beside the ones this range closed. The walkthrough files are ephemeral like a testbook, so leave them uncommitted and offer to delete them once the tickets exist.
 
-**Done when:** the queue is handed to `/to-tickets`, or is empty and the human knows it.
+**Done when:** the build-later points are handed to `/to-tickets`, or there are none and the human knows it.
 
 ## Units and IDs
 
@@ -150,13 +155,29 @@ When a change's explanation depends on surrounding code that three lines of cont
 
 The human references units by ID, and IDs are exact: `T48.2` means the whole change, `T48.2b` means one hunk. In the large-range branch, re-read the referenced hunks before answering.
 
-A pasted export arrives grouped as **Needs change**, **Questions**, and **Fine**. Answer the questions first, then take each needs-change item as a request.
+A request to reshape the walkthrough itself ("merge T48.2 and T48.3", "this belongs under T50") is an outline edit followed by `build`, not an open point. IDs are permanent within a walkthrough: a merged change keeps the lower ID, the other ID retires, and a new change takes the next unused number. Untouched changes keep their IDs, so the human's notes on the page stay attached.
 
-**Every request gets a bucket.** Propose one, and let the human confirm or flip it:
+### Open points
 
-- **Now**: small and mechanical, the whole edit visible in one reading. Examples: removing comments, renaming, extracting a helper, tightening a test. Edit the code in that repo on its current branch, run the checks that cover the touched files, and commit it alone as a one-line conventional commit. Then record it on each affected change as a `revisions` entry, rerun `hunks` with the new `HEAD`, and rerun `build`. `build` marks every change whose hunks moved as **revised**, and the page resets its status so the human looks again.
-- **Queue**: design-sized. Examples: another approach, a refactor across modules, anything worth a fresh context. Discuss it until the human settles the direction, then append it to `queue.md`: the unit IDs, the request, and the direction you agreed.
+An **open point** is anything the review raised that needs a decision before it becomes work. Collect them from:
 
-A question like "what about approach X?" is a discussion first. Answer it against the code and the why, and bucket it only once the human decides to act.
+- every change a pasted export lists under **Needs change** or **Questions**, with the human's note;
+- every change in the Untraced group, and every change with an inferred why, that the export does not list under **Fine**: nothing asked for that code, so it gets a decision by default;
+- every request the human makes by unit ID in chat.
 
-A request to reshape the walkthrough itself ("merge T48.2 and T48.3", "this belongs under T50") is an outline edit followed by `build`. IDs are permanent within a walkthrough: a merged change keeps the lower ID, the other ID retires, and a new change takes the next unused number. Untouched changes keep their IDs, so the human's notes on the page stay attached.
+Number them `P1`, `P2`, … in story order, permanent like unit IDs, and keep them in `open-points.md` beside the outline: the point ID, the unit IDs, what was raised, and, once settled, its outcome.
+
+### Grilling rounds
+
+A point whose fix is small and mechanical, the whole edit visible in one reading (removing comments, renaming, extracting a helper, tightening a test), skips the round: **fix it now** and list it at the top of the next round, so the human can object.
+
+Every other point is grilled: one numbered question per point, each with your recommended outcome, in the grilling format (`❓ **P3** - **T48.2: <title>** … ➡️ <recommendation>`). A question is answered first, against the code and the why, and the recommendation follows from the answer. Points whose answer depends on another open one wait for the next round. Rounds go on until every point has an outcome.
+
+### Outcomes
+
+Each point ends as exactly one of these, recorded in `open-points.md`:
+
+- **Fix now**: edit the code in that repo on its current branch, run the checks that cover the touched files, and commit it alone as a one-line conventional commit. Record it on each affected change as a `revisions` entry, rerun `hunks` with the new `HEAD`, and rerun `build`; a hunk `build` now reports unassigned goes to the change it belongs to, or to Untraced. `build` marks every change whose hunks moved as **revised**, and the page resets its status so the human looks again.
+- **Change the spec or criteria**: the code is right and the spec or tickets are wrong or silent. Write the decision into the spec's Implementation Decisions, and into any ticket whose criteria it changes, in **prose** matching their existing conventions: no file paths, no code, no unit IDs. A change that contradicts an accepted ADR is flagged to the human and left unapplied until they say otherwise. Leave these edits uncommitted.
+- **Drop**: nothing to do; record why.
+- **Build later**: design-sized, worth a fresh context (another approach, a refactor across modules). Discuss it until the human settles the direction, and record that direction with the point.
