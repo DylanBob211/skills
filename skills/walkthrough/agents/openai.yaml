@@ -1,0 +1,3 @@
+interface:
+  display_name: "Walkthrough"
+  short_description: "Review a range of changes as a story: diffs with their why, addressable by ID"

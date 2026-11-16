@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Walkthrough</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html@3/bundles/css/diff2html.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<style>
+:root{
+  --bg:#fbfbfa; --panel:#fff; --ink:#1c1c1a; --muted:#6b6b66; --line:#e3e3df;
+  --accent:#3355cc; --fine:#1f7a4d; --change:#c0392b; --question:#b06a00; --revised:#7a3fb0;
+  --chip:#f0f0ec; --focus:#eef2ff; --add:#e6f4ea; --del:#fdecea;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#16171a; --panel:#1d1f23; --ink:#e8e8e4; --muted:#9a9a94; --line:#2e3136;
+  --accent:#8fa8ff; --fine:#5fcf95; --change:#ff8b7d; --question:#e0aa55; --revised:#c79cf0;
+  --chip:#262930; --focus:#232838; --add:#16301f; --del:#3a1d1a;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1320px;margin:0 auto;padding:0 16px 16px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)} nav.toc{display:none}}
+header.top{grid-column:1/-1;position:sticky;top:0;z-index:5;background:var(--bg);
+  border-bottom:1px solid var(--line);padding:10px 0}
+h1{font-size:22px;margin:.2em 0}
+h2{font-size:18px;margin:2em 0 .4em;padding-bottom:.3em;border-bottom:1px solid var(--line);
+  display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+h3{font-size:15px;margin:0}
+code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em}
+kbd{background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px}
+.bar{height:6px;background:var(--chip);border-radius:3px;overflow:hidden;display:flex;margin:8px 0 6px}
+.bar i{display:block;height:100%}
+.tally{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;align-items:center}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+button{font:inherit;font-size:13px;padding:5px 11px;border:1px solid var(--line);
+  border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+nav.toc{position:sticky;top:150px;align-self:start;max-height:calc(100vh - 170px);overflow:auto;
+  font-size:13px;padding-top:16px}
+nav.toc a{display:flex;gap:6px;text-decoration:none;color:var(--ink);padding:1px 0}
+nav.toc a.grp{font-weight:600;margin-top:10px}
+nav.toc a .dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--line)}
+nav.toc a[data-s=fine] .dot{background:var(--fine)}
+nav.toc a[data-s=change] .dot{background:var(--change)}
+nav.toc a[data-s=question] .dot{background:var(--question)}
+nav.toc a.cur{color:var(--accent)}
+.overview{white-space:pre-wrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin:14px 0}
+.card.focused{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.card[data-s=fine]{border-left:4px solid var(--fine)}
+.card[data-s=change]{border-left:4px solid var(--change)}
+.card[data-s=question]{border-left:4px solid var(--question)}
+.head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.chip{background:var(--chip);border-radius:999px;padding:1px 8px;font-size:11.5px;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.chip.id{text-transform:none;letter-spacing:0;font-family:ui-monospace,monospace;color:var(--ink)}
+.chip.revised{background:var(--revised);color:#fff}
+.chip.inferred{color:var(--question)}
+.why{margin:10px 0 4px;padding:0;list-style:none}
+.why li{border-left:3px solid var(--line);padding:2px 10px;margin:4px 0}
+.why li.inferred{border-left-color:var(--question);font-style:italic}
+.why .src{display:block;color:var(--muted);font-size:12.5px;font-style:normal}
+.how{margin:8px 0}
+.lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.hunk{margin:12px 0 0;border-top:1px dashed var(--line);padding-top:8px}
+.hunk.lead .hhead .chip.id{background:var(--accent);color:#fff}
+.hhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
+.hhead .path{font-family:ui-monospace,monospace;font-size:12.5px;word-break:break-all}
+.hnote{font-size:13.5px;margin:4px 0}
+.commits{font-size:12px;color:var(--muted)}
+.diff{margin-top:6px;overflow-x:auto;font-size:12.5px}
+.diff .d2h-file-header{display:none}
+.diff .d2h-file-wrapper{margin-bottom:0;border-radius:6px}
+pre.raw{margin:0;padding:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow-x:auto;font-size:12.5px}
+pre.raw .a{background:var(--add);display:block}
+pre.raw .d{background:var(--del);display:block}
+details.rev{margin-top:12px;border:1px solid var(--revised);border-radius:6px;padding:6px 10px}
+details.rev summary{cursor:pointer;font-size:13.5px}
+.states{display:flex;gap:6px;margin:12px 0 0;flex-wrap:wrap}
+.states button[aria-pressed=true]{color:#fff;border-color:transparent}
+.states button[data-s=fine][aria-pressed=true]{background:var(--fine)}
+.states button[data-s=change][aria-pressed=true]{background:var(--change)}
+.states button[data-s=question][aria-pressed=true]{background:var(--question)}
+textarea{width:100%;margin-top:10px;min-height:48px;resize:vertical;font:inherit;
+  font-size:13.5px;padding:8px;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+td,th{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);
+  color:var(--bg);padding:8px 16px;border-radius:6px;font-size:13px;opacity:0;
+  transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 id="title"></h1>
+    <div class="meta" id="subtitle"></div>
+    <div class="bar" id="bar"></div>
+    <div class="tally" id="tally"></div>
+    <div class="btns">
+      <button id="copy">Copy review</button>
+      <button id="download">Download review</button>
+      <button id="view">Side by side</button>
+      <button id="reset">Reset</button>
+      <span class="meta"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>f</kbd>ine · <kbd>c</kbd>hange · <kbd>q</kbd>uestion · <kbd>n</kbd>ote</span>
+    </div>
+  </header>
+  <nav class="toc" id="toc"></nav>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- WALKTHROUGH DATA. Written by `walkthrough.mjs build`; do not hand-edit this file. -->
+<script type="application/json" id="walkthrough">
+{"title":"Example walkthrough","slug":"example","generated":"1970-01-01","source":{"kind":"range","ref":"REPLACE ME"},"overview":"","ranges":[],"groups":[]}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/diff2html@3/bundles/js/diff2html-ui.min.js"></script>
+<script>
+const D = JSON.parse(document.getElementById('walkthrough').textContent);
+const KEY = 'walkthrough:' + (D.slug || 'untitled');
+const STATES = ['fine','change','question'];
+const LABEL = {fine:'✓ Fine',change:'✎ Needs change',question:'? Question',unreviewed:'Unreviewed'};
+const CH = (D.groups||[]).flatMap(g => (g.changes||[]).map(c => ({...c, group:g})));
+const byId = Object.fromEntries(CH.map(c => [c.id, c]));
+
+let st = {status:{},notes:{},session:'',view:'line-by-line'};
+try { const r = localStorage.getItem(KEY); if (r) st = {...st, ...JSON.parse(r)}; } catch(e){}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} }
+// A status belongs to the hunks it was given for: when the change's signature moves, it lapses.
+const stat = id => { const s = st.status[id]; return s && byId[id] && s.sig === byId[id].sig ? s.s : 'unreviewed'; };
+const setStat = (id, s) => { if (stat(id) === s) delete st.status[id]; else st.status[id] = {s, sig:byId[id].sig}; save(); paint(); };
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const para = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const KIND = {ticket:'ticket', shared:'shared', untraced:'untraced'};
+let focus = 0;
+
+/* ---------- render ---------- */
+function shell(){
+  document.title = D.title || 'Walkthrough';
+  document.getElementById('title').textContent = D.title || 'Walkthrough';
+  const nh = CH.reduce((n,c)=>n+(c.hunks||[]).length,0);
+  const bits = [];
+  if (D.source) bits.push('Source: '+D.source.kind+(D.source.ref?' — '+D.source.ref:''));
+  if (D.generated) bits.push('Generated '+D.generated);
+  bits.push(CH.length+' changes · '+nh+' hunks');
+  document.getElementById('subtitle').textContent = bits.join(' · ');
+
+  let t = '';
+  for (const g of D.groups||[]){
+    t += '<a class="grp" href="#'+esc(g.id)+'">'+esc(g.id)+' · '+esc(g.title)+'</a>';
+    for (const c of g.changes||[]) t += '<a href="#'+esc(c.id)+'" data-id="'+esc(c.id)+'"><span class="dot"></span><span>'+esc(c.id)+' '+esc(c.title)+'</span></a>';
+  }
+  document.getElementById('toc').innerHTML = t;
+
+  let h = '';
+  if (D.overview) h += '<h2>Overview</h2><p class="overview">'+para(D.overview)+'</p>';
+  if ((D.ranges||[]).length){
+    h += '<table><tr><th>Repo</th><th>Range</th></tr>';
+    for (const r of D.ranges) h += '<tr><td>'+esc(r.repo)+'</td><td><code>'+esc(r.base.slice(0,8))+'..'+esc(r.head.slice(0,8))+'</code></td></tr>';
+    h += '</table>';
+  }
+  h += '<h2>Session notes</h2><textarea id="session" placeholder="Anything cross-cutting, not tied to one change."></textarea>';
+  for (const g of D.groups||[]){
+    h += '<h2 id="'+esc(g.id)+'"><span class="chip id">'+esc(g.id)+'</span>'+esc(g.title)
+      + '<span class="chip">'+esc(KIND[g.kind]||g.kind||'ticket')+'</span></h2>';
+    if (g.summary) h += '<p>'+para(g.summary)+'</p>';
+    if (g.ref) h += '<p class="meta">'+esc(g.ref)+'</p>';
+    for (const c of g.changes||[]) h += card(c);
+  }
+  document.getElementById('main').innerHTML = h;
+
+  const sess = document.getElementById('session');
+  sess.value = st.session || '';
+  sess.addEventListener('input', () => { st.session = sess.value; save(); });
+  const main = document.getElementById('main');
+  main.addEventListener('click', ev => {
+    const b = ev.target.closest('.states button'); if (!b) return;
+    const id = b.closest('.card').dataset.id;
+    focus = CH.findIndex(c => c.id === id);
+    setStat(id, b.dataset.s);
+  });
+  main.addEventListener('input', ev => {
+    if (!ev.target.matches('textarea.note')) return;
+    st.notes[ev.target.closest('.card').dataset.id] = ev.target.value; save();
+  });
+}
+
+function card(c){
+  let h = '<section class="card" id="'+esc(c.id)+'" data-id="'+esc(c.id)+'">';
+  h += '<div class="head"><span class="chip id">'+esc(c.id)+'</span><h3>'+esc(c.title)+'</h3>';
+  if (c.revised) h += '<span class="chip revised">revised</span>';
+  if ((c.serves||[]).length) h += '<span class="chip">serves '+c.serves.map(esc).join(', ')+'</span>';
+  h += '</div>';
+  if ((c.why||[]).length){
+    h += '<ul class="why">';
+    for (const w of c.why)
+      h += '<li class="'+(w.inferred?'inferred':'')+'">'+para(w.quote)
+        + '<span class="src">'+(w.inferred?'<span class="chip inferred">inferred</span>':esc(w.source))+'</span></li>';
+    h += '</ul>';
+  }
+  if (c.how) h += '<div class="how"><span class="lbl">How</span> '+para(c.how)+'</div>';
+  for (const k of c.hunks||[]){
+    h += '<div class="hunk'+(k.id===c.lead?' lead':'')+'" id="'+esc(k.id)+'"><div class="hhead">'
+      + '<span class="chip id">'+esc(k.id)+'</span>'
+      + '<span class="path">'+esc(k.repo)+' · '+esc(k.oldFile && k.oldFile!==k.file ? k.oldFile+' → '+k.file : k.file)+'</span>'
+      + (k.status && k.status!=='modified' ? '<span class="chip">'+esc(k.status)+'</span>' : '')
+      + '<span class="meta">+'+k.added+' −'+k.removed+'</span>'
+      + (k.id===c.lead ? '<span class="chip">start here</span>' : '')
+      + '</div>';
+    if (k.note) h += '<div class="hnote">'+para(k.note)+'</div>';
+    if ((k.commits||[]).length) h += '<div class="commits">'+k.commits.map(x=>'<code>'+esc(x.sha)+'</code> '+esc(x.subject)).join(' · ')+'</div>';
+    h += '<div class="diff" data-patch="'+esc(c.id)+'|'+esc(k.id)+'"></div></div>';
+  }
+  for (const r of c.revisions||[]){
+    h += '<details class="rev"><summary><span class="chip revised">revision</span> '+para(r.request||'')
+      + ' <span class="meta">— <code>'+esc(String(r.commit).slice(0,8))+'</code> '+esc(r.subject||'')+'</span></summary>'
+      + '<div class="diff" data-rev="'+esc(c.id)+'|'+esc(r.commit)+'"></div></details>';
+  }
+  h += '<div class="states">'+STATES.map(x=>'<button data-s="'+x+'">'+LABEL[x]+'</button>').join('')+'</div>';
+  h += '<textarea class="note" placeholder="Note — what to change, or what you want to ask. Quote hunk ids like '+esc(c.id)+'a."></textarea>';
+  return h + '</section>';
+}
+
+function patchFor(el){
+  if (el.dataset.patch){
+    const [cid, hid] = el.dataset.patch.split('|');
+    return (byId[cid].hunks||[]).find(k => k.id === hid).patch;
+  }
+  const [cid, sha] = el.dataset.rev.split('|');
+  return (byId[cid].revisions||[]).find(r => String(r.commit) === sha).patch || '';
+}
+
+function drawDiff(el){
+  const patch = patchFor(el);
+  if (window.Diff2HtmlUI){
+    try {
+      const ui = new Diff2HtmlUI(el, patch, {
+        drawFileList:false, matching:'lines', outputFormat:st.view, colorScheme:'auto',
+        highlight:true, fileContentToggle:false, synchronisedScroll:true,
+      });
+      ui.draw(); ui.highlightCode(); el.dataset.drawn = st.view; return;
+    } catch(e){}
+  }
+  // No CDN: plain coloured text.
+  el.innerHTML = '<pre class="raw">'+patch.split('\n').filter(l=>!/^(diff --git|index |--- |\+\+\+ )/.test(l)).map(l =>
+    '<span class="'+(l[0]==='+'?'a':l[0]==='-'?'d':'')+'">'+esc(l)+'</span>').join('\n')+'</pre>';
+  el.dataset.drawn = 'raw';
+}
+
+// Diffs draw as they scroll near, so a large walkthrough opens instantly.
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting && e.target.dataset.drawn !== st.view && e.target.dataset.drawn !== 'raw') drawDiff(e.target);
+}), {rootMargin:'800px'});
+function observeDiffs(){ document.querySelectorAll('.diff').forEach(el => { io.unobserve(el); io.observe(el); }); }
+document.addEventListener('toggle', ev => { if (ev.target.matches('details.rev')) ev.target.querySelectorAll('.diff').forEach(drawDiff); }, true);
+
+function paint(){
+  for (const c of CH){
+    const el = document.getElementById(c.id); if (!el) continue;
+    const cur = stat(c.id);
+    el.dataset.s = cur;
+    el.querySelectorAll('.states button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === cur)));
+    const n = el.querySelector('textarea.note');
+    if (n.value !== (st.notes[c.id]||'')) n.value = st.notes[c.id]||'';
+    el.classList.toggle('focused', CH[focus] && CH[focus].id === c.id);
+    const a = document.querySelector('nav.toc a[data-id="'+CSS.escape(c.id)+'"]');
+    if (a){ a.dataset.s = cur; a.classList.toggle('cur', CH[focus] && CH[focus].id === c.id); }
+  }
+  const count = x => CH.filter(c => stat(c.id) === x).length;
+  const done = CH.length - count('unreviewed');
+  document.getElementById('bar').innerHTML = STATES.map(x =>
+    '<i style="width:'+(CH.length?count(x)/CH.length*100:0)+'%;background:var(--'+x+')"></i>').join('');
+  document.getElementById('tally').innerHTML = '<span><b>'+done+'/'+CH.length+'</b> reviewed</span>'
+    + STATES.map(x=>'<span style="color:var(--'+x+')">'+LABEL[x]+' <b>'+count(x)+'</b></span>').join('')
+    + (CH.some(c=>c.revised) ? '<span style="color:var(--revised)">revised <b>'+CH.filter(c=>c.revised).length+'</b></span>' : '');
+  document.getElementById('view').textContent = st.view === 'side-by-side' ? 'Unified' : 'Side by side';
+}
+
+/* ---------- export ---------- */
+function markdown(){
+  const L = [];
+  const note = id => (st.notes[id]||'').trim();
+  L.push('# Walkthrough review: '+(D.title||'Walkthrough'), '');
+  L.push('**Source:** '+(D.source?D.source.kind+(D.source.ref?' — '+D.source.ref:''):'?')
+    +' · **Generated:** '+(D.generated||'?')+' · **Reviewed:** '+new Date().toISOString().slice(0,10), '');
+  if ((D.ranges||[]).length) L.push('**Ranges:** '+D.ranges.map(r=>r.repo+' `'+r.base.slice(0,8)+'..'+r.head.slice(0,8)+'`').join(', '), '');
+  L.push('## Session notes', '', (st.session||'').trim() || '_None recorded._', '');
+  const line = c => '- `'+c.id+'` '+c.title+(note(c.id) ? '\n  '+note(c.id).replace(/\n/g,'\n  ') : '');
+  for (const [x, head] of [['change','Needs change'],['question','Questions']]){
+    const cs = CH.filter(c => stat(c.id) === x);
+    if (cs.length){ L.push('## '+head, ''); cs.forEach(c => L.push(line(c))); L.push(''); }
+  }
+  const fine = CH.filter(c => stat(c.id) === 'fine');
+  if (fine.length){
+    L.push('## Fine', '');
+    fine.forEach(c => L.push(note(c.id) ? line(c) : '- `'+c.id+'` '+c.title));
+    L.push('');
+  }
+  const open = CH.filter(c => stat(c.id) === 'unreviewed');
+  if (open.length){
+    L.push('## Not reviewed', '');
+    open.forEach(c => L.push('- `'+c.id+'` '+c.title+(c.revised?' _(revised)_':'')+(note(c.id)?' — '+note(c.id):'')));
+    L.push('');
+  }
+  return L.join('\n');
+}
+
+function toast(m){
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'), 1800);
+}
+
+/* ---------- wire ---------- */
+shell(); paint(); observeDiffs();
+if (location.hash){
+  const i = CH.findIndex(c => '#'+c.id === location.hash || (c.hunks||[]).some(k => '#'+k.id === location.hash));
+  if (i >= 0){ focus = i; paint(); }
+}
+
+document.getElementById('copy').addEventListener('click', async () => {
+  const md = markdown();
+  try { await navigator.clipboard.writeText(md); toast('Review copied — paste it into the walkthrough session'); }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = md; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('Review copied'); } catch(e2){ toast('Copy blocked — use Download'); }
+    ta.remove();
+  }
+});
+document.getElementById('download').addEventListener('click', () => {
+  const name = 'walkthrough-'+(D.slug||'review')+'-'+new Date().toISOString().slice(0,10)+'.md';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([markdown()], {type:'text/markdown'}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+  toast('Saved '+name);
+});
+document.getElementById('view').addEventListener('click', () => {
+  st.view = st.view === 'side-by-side' ? 'line-by-line' : 'side-by-side';
+  save(); paint();
+  document.querySelectorAll('.diff').forEach(el => { if (el.dataset.drawn && el.dataset.drawn !== 'raw') delete el.dataset.drawn; });
+  observeDiffs();
+});
+document.getElementById('reset').addEventListener('click', () => {
+  st = {status:{},notes:{},session:'',view:st.view};
+  save();
+  document.getElementById('session').value = '';
+  paint(); toast('Review reset');
+});
+document.addEventListener('keydown', ev => {
+  if (ev.target.matches('textarea,input') || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const k = ev.key.toLowerCase();
+  const move = k === 'j' ? 1 : k === 'k' ? -1 : 0;
+  if (move){
+    focus = Math.max(0, Math.min(CH.length-1, focus+move));
+    paint();
+    const el = document.getElementById(CH[focus].id);
+    if (el) el.scrollIntoView({block:'start',behavior:'smooth'});
+    ev.preventDefault(); return;
+  }
+  if (k === 'n' && CH[focus]){
+    const n = document.getElementById(CH[focus].id).querySelector('textarea.note');
+    n.focus(); ev.preventDefault(); return;
+  }
+  const hit = {f:'fine',c:'change',q:'question'}[k];
+  if (hit && CH[focus]){ setStat(CH[focus].id, hit); ev.preventDefault(); }
+});
+</script>
+</body>
+</html>

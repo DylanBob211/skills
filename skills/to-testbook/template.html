@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Testbook</title>
+<style>
+:root{
+  --bg:#fbfbfa; --panel:#fff; --ink:#1c1c1a; --muted:#6b6b66; --line:#e3e3df;
+  --accent:#3355cc; --pass:#1f7a4d; --fail:#c0392b; --blocked:#b06a00; --skip:#6b6b66;
+  --chip:#f0f0ec; --focus:#eef2ff;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#16171a; --panel:#1d1f23; --ink:#e8e8e4; --muted:#9a9a94; --line:#2e3136;
+  --accent:#8fa8ff; --pass:#5fcf95; --fail:#ff8b7d; --blocked:#e0aa55; --skip:#9a9a94;
+  --chip:#262930; --focus:#232838;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:.2em 0}
+h2{font-size:17px;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+h3{font-size:15px;margin:0}
+code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em}
+kbd{background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);
+  border-bottom:1px solid var(--line);padding:10px 0;margin-bottom:8px}
+.bar{height:6px;background:var(--chip);border-radius:3px;overflow:hidden;display:flex;margin:8px 0 6px}
+.bar i{display:block;height:100%}
+.tally{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;align-items:center}
+.tally b{font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+button{font:inherit;font-size:13px;padding:5px 11px;border:1px solid var(--line);
+  border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:14px;margin:12px 0}
+.card.focused{background:var(--focus);border-color:var(--accent)}
+.card[data-status=pass]{border-left:4px solid var(--pass)}
+.card[data-status=fail]{border-left:4px solid var(--fail)}
+.card[data-status=blocked]{border-left:4px solid var(--blocked)}
+.card[data-status=skipped]{border-left:4px solid var(--skip)}
+.card.derived{border-style:dashed}
+.head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.chip{background:var(--chip);border-radius:999px;padding:1px 8px;font-size:11.5px;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.chip.id{text-transform:none;letter-spacing:0;font-family:ui-monospace,monospace}
+.states{display:flex;gap:6px;margin:10px 0 0;flex-wrap:wrap}
+.states button[aria-pressed=true]{color:#fff;border-color:transparent}
+.states button[data-s=pass][aria-pressed=true]{background:var(--pass)}
+.states button[data-s=fail][aria-pressed=true]{background:var(--fail)}
+.states button[data-s=blocked][aria-pressed=true]{background:var(--blocked)}
+.states button[data-s=skipped][aria-pressed=true]{background:var(--skip)}
+ol.steps{padding-left:22px;margin:10px 0}
+ol.steps li{margin:6px 0}
+.exp{display:block;color:var(--muted);font-size:13.5px}
+.exp::before{content:"→ expect: "}
+ul.pre{margin:8px 0;padding-left:20px;color:var(--muted);font-size:13.5px}
+textarea{width:100%;margin-top:10px;min-height:52px;resize:vertical;font:inherit;
+  font-size:13.5px;padding:8px;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+td,th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.nopath{color:var(--blocked)}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);
+  color:var(--bg);padding:8px 16px;border-radius:6px;font-size:13px;opacity:0;
+  transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 id="title"></h1>
+    <div class="meta" id="subtitle"></div>
+    <div class="bar" id="bar"></div>
+    <div class="tally" id="tally"></div>
+    <div class="btns">
+      <button id="copy">Copy results</button>
+      <button id="download">Download results</button>
+      <button id="reset">Reset run</button>
+      <span class="meta"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>p</kbd>ass <kbd>f</kbd>ail <kbd>b</kbd>locked <kbd>s</kbd>kip</span>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- TESTBOOK DATA. Replace the JSON below with the generated testbook.
+     Everything else in this file is the shell: do not hand-edit it. -->
+<script type="application/json" id="testbook">
+{
+  "title": "Example testbook",
+  "slug": "example",
+  "sourceKind": "spec",
+  "sourceRef": "REPLACE ME",
+  "generated": "1970-01-01",
+  "criteria": [],
+  "environment": [],
+  "groups": [],
+  "unverifiable": []
+}
+</script>
+
+<script>
+const D = JSON.parse(document.getElementById('testbook').textContent);
+const KEY = 'testbook:' + (D.slug || 'untitled');
+const STATES = ['pass','fail','blocked','skipped'];
+const LABEL = {pass:'Pass',fail:'Fail',blocked:'Blocked',skipped:'Skip',untested:'Untested'};
+const SCEN = (D.groups||[]).flatMap(g => (g.scenarios||[]).map(s => ({...s, group:g.title})));
+const CRIT = D.criteria||[];
+
+let st = {status:{},notes:{},session:''};
+try { const r = localStorage.getItem(KEY); if(r) st = {...st, ...JSON.parse(r)}; } catch(e){}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} }
+const stat = id => st.status[id] || 'untested';
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let focus = 0;
+
+/* ---------- render ---------- */
+function shell(){
+  document.title = D.title || 'Testbook';
+  document.getElementById('title').textContent = D.title || 'Testbook';
+  const bits = [];
+  if (D.sourceKind) bits.push('Source: ' + D.sourceKind + (D.sourceRef ? ' — ' + D.sourceRef : ''));
+  if (D.generated) bits.push('Generated ' + D.generated);
+  bits.push(SCEN.length + ' scenarios');
+  document.getElementById('subtitle').textContent = bits.join(' · ');
+
+  let h = '';
+  if (CRIT.length){
+    h += '<h2>What this verifies</h2><table><tr><th>#</th><th>Criterion</th><th>Scenarios</th></tr>';
+    for (const c of CRIT){
+      const covering = SCEN.filter(s => (s.covers||[]).includes(c.id));
+      const cells = covering.length
+        ? covering.map(s => '<a href="#'+esc(s.id)+'"><code>'+esc(s.id)+'</code></a>').join(' ')
+        : '<span class="nopath">no manual path</span>';
+      h += '<tr><td><code>'+esc(c.id)+'</code></td><td>'+esc(c.text)
+        + (c.origin ? ' <span class="chip">'+esc(c.origin)+'</span>' : '')
+        + '</td><td>'+cells+'</td></tr>';
+    }
+    h += '</table>';
+  }
+  if ((D.environment||[]).length){
+    h += '<h2>Environment</h2><table><tr><th>What</th><th>How</th><th>Found in</th></tr>';
+    for (const e of D.environment)
+      h += '<tr><td>'+esc(e.what)+'</td><td><code>'+esc(e.how)+'</code></td><td class="meta">'+esc(e.source||'')+'</td></tr>';
+    h += '</table>';
+  }
+  h += '<h2>Session notes</h2><textarea id="session" placeholder="Anything cross-cutting: browser, environment, general observations."></textarea>';
+
+  for (const g of (D.groups||[])){
+    h += '<h2>'+esc(g.title)+'</h2>';
+    if (g.note) h += '<p class="meta">'+esc(g.note)+'</p>';
+    for (const s of (g.scenarios||[])) h += card(s);
+  }
+  if ((D.unverifiable||[]).length){
+    h += '<h2>Unverifiable</h2><p class="meta">Criteria with no manual path in this testbook.</p><table><tr><th>Covers</th><th>Why</th></tr>';
+    for (const u of D.unverifiable)
+      h += '<tr><td>'+(u.covers||[]).map(c=>'<code>'+esc(c)+'</code>').join(' ')+'</td><td>'+esc(u.why)+'</td></tr>';
+    h += '</table>';
+  }
+  document.getElementById('main').innerHTML = h;
+
+  const sess = document.getElementById('session');
+  sess.value = st.session || '';
+  sess.addEventListener('input', () => { st.session = sess.value; save(); });
+
+  document.getElementById('main').addEventListener('click', ev => {
+    const b = ev.target.closest('.states button'); if (!b) return;
+    const id = b.closest('.card').dataset.id;
+    st.status[id] = stat(id) === b.dataset.s ? 'untested' : b.dataset.s;
+    focus = SCEN.findIndex(s => s.id === id);
+    save(); paint();
+  });
+  document.getElementById('main').addEventListener('input', ev => {
+    if (!ev.target.matches('textarea.note')) return;
+    st.notes[ev.target.closest('.card').dataset.id] = ev.target.value; save();
+  });
+}
+
+function card(s){
+  let h = '<section class="card'+(s.derived?' derived':'')+'" id="'+esc(s.id)+'" data-id="'+esc(s.id)+'">';
+  h += '<div class="head"><span class="chip id">'+esc(s.id)+'</span><h3>'+esc(s.title)+'</h3>';
+  if (s.surface) h += '<span class="chip">'+esc(s.surface)+'</span>';
+  if (s.derived) h += '<span class="chip">derived</span>';
+  if ((s.covers||[]).length) h += '<span class="chip">covers '+(s.covers).map(esc).join(', ')+'</span>';
+  h += '</div>';
+  if ((s.preconditions||[]).length)
+    h += '<ul class="pre">'+s.preconditions.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul>';
+  if ((s.steps||[]).length){
+    h += '<ol class="steps">';
+    for (const t of s.steps)
+      h += '<li>'+esc(t.do)+(t.expect?'<span class="exp">'+esc(t.expect)+'</span>':'')+'</li>';
+    h += '</ol>';
+  }
+  h += '<div class="states">'+STATES.map(x=>'<button data-s="'+x+'">'+LABEL[x]+'</button>').join('')+'</div>';
+  h += '<textarea class="note" placeholder="Notes — what you saw, anything odd even if it passed."></textarea>';
+  return h + '</section>';
+}
+
+function paint(){
+  for (const s of SCEN){
+    const el = document.getElementById(s.id); if (!el) continue;
+    const cur = stat(s.id);
+    el.dataset.status = cur;
+    el.querySelectorAll('.states button').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.s === cur)));
+    const n = el.querySelector('textarea.note');
+    if (n.value !== (st.notes[s.id]||'')) n.value = st.notes[s.id]||'';
+    el.classList.toggle('focused', SCEN[focus] && SCEN[focus].id === s.id);
+  }
+  const count = x => SCEN.filter(s => stat(s.id) === x).length;
+  const done = SCEN.length - count('untested');
+  document.getElementById('bar').innerHTML = STATES.map(x =>
+    '<i style="width:'+(SCEN.length?count(x)/SCEN.length*100:0)+'%;background:var(--'+(x==='skipped'?'skip':x)+')"></i>').join('');
+  document.getElementById('tally').innerHTML =
+    '<span><b>'+done+'/'+SCEN.length+'</b> run</span>' +
+    STATES.map(x=>'<span style="color:var(--'+(x==='skipped'?'skip':x)+')">'+LABEL[x]+' <b>'+count(x)+'</b></span>').join('');
+}
+
+/* ---------- export ---------- */
+function block(s){
+  const L = ['### `'+s.id+'` — '+s.title];
+  const f = ['Surface: '+(s.surface||'n/a'), 'Group: '+s.group, 'Status: '+LABEL[stat(s.id)]];
+  if (s.derived) f.push('Derived scenario');
+  if ((s.covers||[]).length) f.push('Covers: '+s.covers.join(', '));
+  L.push(f.join(' · '), '');
+  if ((s.preconditions||[]).length){
+    L.push('**Preconditions:**');
+    s.preconditions.forEach(p => L.push('- '+p));
+    L.push('');
+  }
+  if ((s.steps||[]).length){
+    L.push('**Steps:**');
+    s.steps.forEach((t,i) => L.push((i+1)+'. '+t.do + (t.expect ? ' → expect: '+t.expect : '')));
+    L.push('');
+  }
+  L.push('**Observed:** '+((st.notes[s.id]||'').trim() || '_no note recorded_'), '');
+  return L.join('\n');
+}
+
+function markdown(){
+  const count = x => SCEN.filter(s => stat(s.id) === x).length;
+  const by = x => SCEN.filter(s => stat(s.id) === x);
+  const L = [];
+  L.push('# Testbook run: '+(D.title||'Testbook'), '');
+  L.push('**Source:** '+(D.sourceKind||'?')+(D.sourceRef?' — '+D.sourceRef:'')
+    +' · **Testbook generated:** '+(D.generated||'?')+' · **Run completed:** '+new Date().toISOString().slice(0,10), '');
+  const WORD = {pass:'passed',fail:'failed',blocked:'blocked',skipped:'skipped',untested:'not run'};
+  L.push('**Result:** '+SCEN.length+' scenarios — '
+    + STATES.concat(['untested']).map(x=>count(x)+' '+WORD[x]).join(', '), '');
+  L.push('## Session notes', '', (st.session||'').trim() || '_None recorded._', '');
+
+  for (const [x, head] of [['fail','Failures'],['blocked','Blocked']]){
+    if (!count(x)) continue;
+    L.push('## '+head, '');
+    by(x).forEach(s => L.push(block(s)));
+  }
+  if (count('pass')){
+    const noted = by('pass').filter(s => (st.notes[s.id]||'').trim());
+    const plain = by('pass').filter(s => !(st.notes[s.id]||'').trim());
+    if (plain.length){
+      L.push('## Passed', '');
+      plain.forEach(s => L.push('- `'+s.id+'` — '+s.title));
+      L.push('');
+    }
+    if (noted.length){
+      L.push('## Passed, with observations', '');
+      noted.forEach(s => L.push(block(s)));
+    }
+  }
+  for (const [x, head] of [['skipped','Skipped'],['untested','Not run']]){
+    if (!count(x)) continue;
+    L.push('## '+head, '');
+    by(x).forEach(s => L.push('- `'+s.id+'` — '+s.title
+      + ((st.notes[s.id]||'').trim() ? ' — '+st.notes[s.id].trim() : '')));
+    L.push('');
+  }
+  const gaps = (D.unverifiable||[]);
+  if (gaps.length){
+    L.push('## Criteria with no manual path', '');
+    gaps.forEach(u => {
+      const txt = (u.covers||[]).map(id => {
+        const c = CRIT.find(c=>c.id===id); return '`'+id+'`'+(c?' '+c.text:'');
+      }).join('; ');
+      L.push('- '+txt+' — '+u.why);
+    });
+    L.push('');
+  }
+  return L.join('\n');
+}
+
+function toast(m){
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'), 1800);
+}
+
+/* ---------- wire ---------- */
+shell(); paint();
+if (location.hash) { const i = SCEN.findIndex(s=>'#'+s.id===location.hash); if (i>=0){focus=i;paint();} }
+
+document.getElementById('copy').addEventListener('click', async () => {
+  const md = markdown();
+  try { await navigator.clipboard.writeText(md); toast('Results copied — paste into a Claude session'); }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = md; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('Results copied'); } catch(e2){ toast('Copy blocked — use Download'); }
+    ta.remove();
+  }
+});
+document.getElementById('download').addEventListener('click', () => {
+  const name = 'testbook-'+(D.slug||'run')+'-run-'+new Date().toISOString().slice(0,10)+'.md';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([markdown()], {type:'text/markdown'}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+  toast('Saved '+name);
+});
+document.getElementById('reset').addEventListener('click', () => {
+  st = {status:{},notes:{},session:''};
+  save();
+  document.getElementById('session').value = '';
+  document.querySelectorAll('textarea.note').forEach(n => n.value = '');
+  paint(); toast('Run reset');
+});
+document.addEventListener('keydown', ev => {
+  if (ev.target.matches('textarea,input') || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const k = ev.key.toLowerCase();
+  const move = k === 'j' ? 1 : k === 'k' ? -1 : 0;
+  if (move){
+    focus = Math.max(0, Math.min(SCEN.length-1, focus+move));
+    paint();
+    const el = document.getElementById(SCEN[focus].id);
+    if (el) el.scrollIntoView({block:'center',behavior:'smooth'});
+    ev.preventDefault(); return;
+  }
+  const hit = {p:'pass',f:'fail',b:'blocked',s:'skipped'}[k];
+  if (hit && SCEN[focus]){
+    const id = SCEN[focus].id;
+    st.status[id] = stat(id) === hit ? 'untested' : hit;
+    save(); paint(); ev.preventDefault();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+interface:
+  display_name: "To Testbook"
+  short_description: "Turn a spec, tickets, or a conversation into an HTML testbook"

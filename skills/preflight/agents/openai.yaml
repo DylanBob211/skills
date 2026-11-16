@@ -1,0 +1,5 @@
+interface:
+  display_name: "Preflight"
+  short_description: "Find contradictions in a spec and its tickets"
+policy:
+  allow_implicit_invocation: false

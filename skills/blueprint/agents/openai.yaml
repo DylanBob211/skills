@@ -1,0 +1,5 @@
+interface:
+  display_name: "Blueprint"
+  short_description: "Preview and agree the architecture a spec will produce, then measure drift"
+policy:
+  allow_implicit_invocation: false
