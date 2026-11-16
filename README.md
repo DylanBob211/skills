@@ -30,3 +30,7 @@ None of that is required to read the skills, but without it the handoffs point n
 ## sandfactory
 
 `preflight` and `walkthrough` each carry a `SANDFACTORY.md`. They read it only when the repo has a `.sandcastle/` directory, so in any other repo it is never loaded.
+
+## License
+
+[MIT](LICENSE)
