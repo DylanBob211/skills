@@ -6,7 +6,7 @@ Agent skills for planning and reviewing work an agent builds from a spec and its
 | --- | --- | --- |
 | [`blueprint`](skills/blueprint/SKILL.md) | After the tickets, before implementation | Previews the architecture the spec and tickets will produce, agrees it with you, and saves it. Later, `/blueprint drift` compares what was built against it. |
 | [`preflight`](skills/preflight/SKILL.md) | Just before implementation | Reads a spec and its tickets as a set, and settles every contradiction or divergence that would stall the agents. |
-| [`to-testbook`](skills/to-testbook/SKILL.md) | After implementation | Turns a spec, tickets, or the conversation into a self-contained HTML page for verifying the feature by hand. Its results export as Markdown an agent can act on. |
+| [`to-testbook`](skills/to-testbook/SKILL.md) | After implementation | Turns a spec, tickets, or the conversation into a self-contained HTML page for verifying the feature by hand. Paste its exported results back and each failure or note is settled in grilling rounds. |
 | [`walkthrough`](skills/walkthrough/SKILL.md) | After implementation | Walks you through the changes as a story: diffs grouped by purpose, each beside the ticket it came from, with every unit addressable by ID in chat. |
 
 All four are invoked by name only (`/blueprint`, `/preflight`, …); the agent never starts them on its own.

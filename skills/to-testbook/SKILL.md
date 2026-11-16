@@ -1,16 +1,23 @@
 ---
 name: to-testbook
-description: "Turn a spec, tickets, or the current conversation into a self-contained HTML testbook: a manual end-to-end verification run whose results export as agent-ready Markdown."
+description: "Turn a spec, tickets, or the current conversation into a self-contained HTML testbook: a manual end-to-end verification run whose exported results are settled in grilling rounds."
 disable-model-invocation: true
 ---
 
 # To Testbook
 
-A **testbook** is one self-contained HTML file that walks a human through verifying a feature end to end, and exports what they found as Markdown another agent can act on: `/to-testbook` → run it by hand → paste the export into `/to-tickets` or `/diagnosing-bugs`. It serves two readers at once, so it is also the brief an agent writes real e2e tests from.
+A **testbook** is one self-contained HTML file that walks a human through verifying a feature end to end, and exports what they found as Markdown: `/to-testbook` → run it by hand → paste the export back into this session. Every failure and note in it becomes an **open point**, settled in grilling rounds; only the points the human decides to build later reach `/to-tickets`. It serves two readers at once, so it is also the brief an agent writes real e2e tests from.
 
 [template.html](template.html) already solves the page: rendering, pass/fail/blocked/skipped state, notes, `localStorage`, keyboard shortcuts, and the Markdown export. **Your job is to produce the testbook JSON and splice it in.** Everything above the `TESTBOOK DATA` marker is the shell, identical in every testbook; leave it exactly as it is.
 
 A testbook is ephemeral, like a wizard: built to verify one piece of work, deleted once the e2e tests exist. Write it beside its source, and leave it uncommitted.
+
+## Pick the branch
+
+If the repo has a `.sandcastle/` directory, the tickets ran through sandfactory: read [SANDFACTORY.md](SANDFACTORY.md) first. It says where an existing testbook lives, which tickets a new one covers, and where fixes are committed.
+
+- **Results**: the target already has a testbook (by default `.scratch/<feature>/testbook.html`). Read its `testbook` JSON block, then the sources its `sourceRef` names, as step 1 says. Then go to step 7 when the human has already pasted an export, otherwise to step 6.
+- **Generate**: otherwise, steps 1–8.
 
 ## Process
 
@@ -59,9 +66,21 @@ Where a criterion has no manual path at all, list it under `unverifiable` with t
 
 ### 6. Hand off
 
-Report the path and its `file://` URL, plus a one-line coverage summary: scenario count, derived count, and the number of criteria with no manual path. Then tell the user the loop: run it, then either paste the copied results back into a session or point an agent at the downloaded `.md`, and `/to-tickets` turns the failures into work.
+Report the path and its `file://` URL, plus a one-line coverage summary: scenario count, derived count, and the number of criteria with no manual path. Then tell the user the loop: run it, then paste the copied results back into this session, or point it at the downloaded `.md`. Stay in the session: the results are settled here.
 
 **Done when:** the user has the URL and both routes for the export.
+
+### 7. Settle the results
+
+Collect the open points from the export, then grill them per **Results** below.
+
+**Done when:** every open point in `open-points.md` has an outcome, and the human has no more to raise.
+
+### 8. Close out
+
+Summarise `open-points.md` by outcome: the commits made, the scenarios to re-run, the spec and ticket edits left uncommitted, the points dropped, and the scenarios still not run. Then hand the **build later** points, and only those, to `/to-tickets` with their agreed direction. The testbook stays ephemeral: leave it and `open-points.md` uncommitted, and offer to delete them once the e2e tests and tickets exist.
+
+**Done when:** the build-later points are handed to `/to-tickets`, or there are none and the human knows it.
 
 ## Anchors
 
@@ -124,3 +143,34 @@ Replace the placeholder inside `<script type="application/json" id="testbook">`.
   ]
 }
 ```
+
+## Results
+
+The export reports scenarios by their `TB-<NN>-<slug>` id, and that id is how a point names its scenario. Before grilling a scenario, re-read its steps and the criteria it covers from the testbook JSON.
+
+### Open points
+
+An **open point** is anything the run surfaced that needs a decision before it becomes work. Collect them from the export:
+
+- every scenario under **Failures** or **Blocked**, with its observed note;
+- every note: under **Passed, with observations**, on a **Skipped** or **Not run** scenario, and each separate item in **Session notes**;
+- every request the human makes by scenario id in chat.
+
+Number them `P1`, `P2`, … in testbook order, permanent within the session, and keep them in `open-points.md` beside the testbook: the point ID, the scenario ids, what was observed, and, once settled, its outcome.
+
+### Grilling rounds
+
+A point whose fix is small and mechanical, the whole edit visible in one reading (a wrong label, a missing guard, a step or expectation the testbook got wrong while the code is right), skips the round: **fix it now** and list it at the top of the next round, so the human can object.
+
+A failure whose cause is unknown is **diagnosed** before it is grilled: run `/diagnosing-bugs` on it in this session, with the scenario's steps and observed note as the report, and bring it to the next round with its cause found.
+
+Every other point is grilled: one numbered question per point, each with your recommended outcome, in the grilling format (`❓ **P3** - **TB-04-<slug>: <title>** … ➡️ <recommendation>`). Answer it first against the code, the criteria, and the source, and let the recommendation follow from the answer. Points whose answer depends on another open one wait for the next round. Rounds go on until every point has an outcome.
+
+### Outcomes
+
+Each point ends as exactly one of these, recorded in `open-points.md`:
+
+- **Fix now**: a fix to the code goes in that repo on its current branch: run the checks that cover the touched files, and commit it alone as a one-line conventional commit. A fix to the testbook (a step or expectation it got wrong) is an edit to its JSON, spliced back into the page. Either way, name the scenarios for the human to re-run.
+- **Change the spec or criteria**: the code is right and the spec, tickets, or criteria are wrong or silent. Write the decision into the spec's Implementation Decisions, and into any ticket whose criteria it changes, in **prose** matching their existing conventions: no file paths, no code, no scenario ids. Update the testbook's criteria and scenarios to match. A change that contradicts an accepted ADR is flagged to the human and left unapplied until they say otherwise. Leave these edits uncommitted.
+- **Drop**: nothing to do; record why.
+- **Build later**: design-sized, worth a fresh context (a missing flow, another approach, a refactor across modules). Discuss it until the human settles the direction, and record that direction with the point.
